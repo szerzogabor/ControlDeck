@@ -8,12 +8,7 @@ namespace ControlDeck.Agent.Tests;
 
 public class ActionDispatcherTests
 {
-    private static ActionDispatcher BuildDispatcher(
-        FakeVolumeController? volume = null,
-        FakeBrightnessController? brightness = null,
-        FakeMediaController? media = null,
-        FakeAppLauncher? appLauncher = null,
-        out CapabilityRegistry capabilityRegistry)
+    private static ActionDispatcher BuildDispatcher(out CapabilityRegistry capabilityRegistry, FakeVolumeController? volume = null, FakeBrightnessController? brightness = null, FakeMediaController? media = null, FakeAppLauncher? appLauncher = null)
     {
         volume ??= new FakeVolumeController();
         brightness ??= new FakeBrightnessController();
@@ -29,7 +24,7 @@ public class ActionDispatcherTests
     public void VolumeSet_WithinRange_Succeeds()
     {
         var volume = new FakeVolumeController();
-        var dispatcher = BuildDispatcher(volume: volume, out _);
+        var dispatcher = BuildDispatcher(out _, volume: volume);
 
         var (success, errorCode, resultingState) = dispatcher.Execute(new VolumeSetDto(70));
 
@@ -57,7 +52,7 @@ public class ActionDispatcherTests
     public void BrightnessSet_WhenBrightnessUnavailable_ReturnsUnsupportedCapability()
     {
         var brightness = new FakeBrightnessController { IsAvailable = false };
-        var dispatcher = BuildDispatcher(brightness: brightness, out _);
+        var dispatcher = BuildDispatcher(out _, brightness: brightness);
 
         var (success, errorCode, _) = dispatcher.Execute(new BrightnessSetDto(50));
 
@@ -69,7 +64,7 @@ public class ActionDispatcherTests
     public void VolumeSet_WhenVolumeUnavailable_ReturnsUnsupportedCapability()
     {
         var volume = new FakeVolumeController { IsAvailable = false };
-        var dispatcher = BuildDispatcher(volume: volume, out var registry);
+        var dispatcher = BuildDispatcher(out var registry, volume: volume);
 
         Assert.DoesNotContain(Domain.Capability.Volume, registry.CurrentCapabilities());
 
@@ -83,7 +78,7 @@ public class ActionDispatcherTests
     public void SetMuted_TogglesFakeController()
     {
         var volume = new FakeVolumeController { Muted = false };
-        var dispatcher = BuildDispatcher(volume: volume, out _);
+        var dispatcher = BuildDispatcher(out _, volume: volume);
 
         var (success, _, resultingState) = dispatcher.Execute(new SetMutedDto(true));
 
@@ -96,7 +91,7 @@ public class ActionDispatcherTests
     public void MediaSetState_DelegatesToMediaController()
     {
         var media = new FakeMediaController();
-        var dispatcher = BuildDispatcher(media: media, out _);
+        var dispatcher = BuildDispatcher(out _, media: media);
 
         var (success, _, _) = dispatcher.Execute(new MediaSetStateDto(WireMediaState.Paused));
 
@@ -108,7 +103,7 @@ public class ActionDispatcherTests
     public void MediaNext_DelegatesToMediaController()
     {
         var media = new FakeMediaController();
-        var dispatcher = BuildDispatcher(media: media, out _);
+        var dispatcher = BuildDispatcher(out _, media: media);
 
         var (success, _, _) = dispatcher.Execute(new MediaNextDto());
 
@@ -120,7 +115,7 @@ public class ActionDispatcherTests
     public void AppLaunch_Found_Succeeds()
     {
         var launcher = new FakeAppLauncher();
-        var dispatcher = BuildDispatcher(appLauncher: launcher, out _);
+        var dispatcher = BuildDispatcher(out _, appLauncher: launcher);
 
         var (success, errorCode, _) = dispatcher.Execute(new AppLaunchDto("spotify"));
 
@@ -134,7 +129,7 @@ public class ActionDispatcherTests
     {
         var launcher = new FakeAppLauncher();
         launcher.ConfigureResult("unknown-app", AppLaunchResult.AppNotFound);
-        var dispatcher = BuildDispatcher(appLauncher: launcher, out _);
+        var dispatcher = BuildDispatcher(out _, appLauncher: launcher);
 
         var (success, errorCode, _) = dispatcher.Execute(new AppLaunchDto("unknown-app"));
 
