@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -199,11 +200,12 @@ class PeerConnection(
                 ),
             )
             val response = withTimeoutOrNull(HANDSHAKE_TIMEOUT_MS) { receiveExpected<ParsedMessage.PairResponse>() } ?: return false
-            if (!response.payload.accepted || response.payload.sharedSecret == null) {
+            val sharedSecret = response.payload.sharedSecret
+            if (!response.payload.accepted || sharedSecret == null) {
                 logger.w(TAG, "pairing rejected by ${peerId.value}: ${response.payload.reason}")
                 return false
             }
-            context.onPaired(peerId, response.payload.deviceName, response.payload.platform, response.payload.sharedSecret)
+            context.onPaired(peerId, response.payload.deviceName, response.payload.platform, sharedSecret)
             true
         } else {
             val request = withTimeoutOrNull(HANDSHAKE_TIMEOUT_MS) { receiveExpected<ParsedMessage.PairRequest>() } ?: return false
@@ -367,7 +369,7 @@ class PeerConnection(
         val messageId = UUID.randomUUID().toString()
         send(envelope(MessageTypes.ACTION, messageId = messageId).withPayload(ActionPayload.serializer(), ActionPayload(action)))
         return withTimeoutOrNull(timeoutMs) {
-            kotlinx.coroutines.flow.first(pendingActionResults) { it.payload.correlatesTo == messageId }
+            pendingActionResults.first { it.payload.correlatesTo == messageId }
         }
     }
 

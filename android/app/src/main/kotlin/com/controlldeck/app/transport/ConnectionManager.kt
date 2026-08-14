@@ -52,7 +52,7 @@ class ConnectionManager(
     private val httpClient by lazy {
         HttpClient(ClientCIO) {
             install(ClientWebSockets) {
-                pingInterval = Duration.ofSeconds(15)
+                pingInterval = Duration.ofSeconds(15).toMillis()
             }
         }
     }
