@@ -1,0 +1,68 @@
+name: CI - Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "protocol/PROTOCOL.md"
+      - ".github/workflows/ci-android.yml"
+  pull_request:
+    paths:
+      - "android/**"
+      - "protocol/PROTOCOL.md"
+      - ".github/workflows/ci-android.yml"
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Build, test, lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Domain module tests (pure Kotlin/JVM)
+        run: gradle :domain:test --console=plain --no-daemon
+
+      - name: Protocol module tests (pure Kotlin/JVM)
+        run: gradle :protocol:test --console=plain --no-daemon
+
+      - name: Android lint
+        run: gradle :app:lintDebug --console=plain --no-daemon
+
+      - name: App unit tests
+        run: gradle :app:testDebugUnitTest --console=plain --no-daemon
+
+      - name: Assemble debug APK
+        run: gradle :app:assembleDebug --console=plain --no-daemon
+
+      - name: Upload test reports
+        if: always()
+        continue-on-error: true # diagnostics only; a storage-quota/upload hiccup must not fail an otherwise green job
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: |
+            android/**/build/reports/tests/**
+            android/**/build/reports/lint-results-*.html
+          if-no-files-found: ignore
+          retention-days: 7

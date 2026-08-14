@@ -1,0 +1,11 @@
+{
+  "solution": {
+    "path": "ControlDeck.sln",
+    "projects": [
+      "src\\ControlDeck.Domain\\ControlDeck.Domain.csproj",
+      "src\\ControlDeck.Protocol\\ControlDeck.Protocol.csproj",
+      "tests\\ControlDeck.Domain.Tests\\ControlDeck.Domain.Tests.csproj",
+      "tests\\ControlDeck.Protocol.Tests\\ControlDeck.Protocol.Tests.csproj"
+    ]
+  }
+}

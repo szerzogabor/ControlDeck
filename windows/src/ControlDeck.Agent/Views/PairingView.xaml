@@ -1,0 +1,32 @@
+<UserControl x:Class="ControlDeck.Agent.Views.PairingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+            <TextBlock Text="Pair a new device" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock Text="Show this device's QR code / PIN and let another ControlDeck device scan or type it." TextWrapping="Wrap" Margin="0,0,0,12" />
+            <Button x:Name="ShowPairingCodeButton" Content="Show pairing code" Click="ShowPairingCodeButton_Click" HorizontalAlignment="Left" />
+            <Image x:Name="QrImage" Width="200" Height="200" Margin="0,16,0,0" HorizontalAlignment="Left" />
+            <TextBlock x:Name="PinText" FontSize="24" FontWeight="Bold" Margin="0,12,0,0" />
+            <TextBlock x:Name="ExpiryText" Foreground="Gray" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="1">
+            <TextBlock Text="Pair by entering a PIN" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock Text="Enter the host/IP, port, and PIN shown on the other device." TextWrapping="Wrap" Margin="0,0,0,12" />
+            <TextBlock Text="Host / IP address" Margin="0,0,0,2" />
+            <TextBox x:Name="HostBox" Margin="0,0,0,8" />
+            <TextBlock Text="Port" Margin="0,0,0,2" />
+            <TextBox x:Name="PortBox" Text="47531" Margin="0,0,0,8" />
+            <TextBlock Text="PIN" Margin="0,0,0,2" />
+            <TextBox x:Name="PinBox" Margin="0,0,0,12" />
+            <Button x:Name="PairButton" Content="Pair" Click="PairButton_Click" HorizontalAlignment="Left" />
+            <TextBlock x:Name="PairResultText" Margin="0,12,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</UserControl>

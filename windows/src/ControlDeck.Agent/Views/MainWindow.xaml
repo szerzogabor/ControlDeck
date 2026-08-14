@@ -1,0 +1,21 @@
+<Window x:Class="ControlDeck.Agent.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ControlDeck" Height="720" Width="1080" MinHeight="480" MinWidth="720">
+    <Grid>
+        <TabControl>
+            <TabItem Header="Dashboard">
+                <ContentControl x:Name="DashboardHost" />
+            </TabItem>
+            <TabItem Header="Devices">
+                <ContentControl x:Name="DevicesHost" />
+            </TabItem>
+            <TabItem Header="Pairing">
+                <ContentControl x:Name="PairingHost" />
+            </TabItem>
+            <TabItem Header="Settings">
+                <ContentControl x:Name="SettingsHost" />
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
