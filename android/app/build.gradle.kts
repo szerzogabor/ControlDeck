@@ -1,19 +1,10 @@
-// The Kotlin plugin variants below (jvm/android/serialization/kapt) are all
-// provided by the same underlying kotlin-gradle-plugin artifact. :domain and
-// :protocol already resolve `org.jetbrains.kotlin.jvm` / `.plugin.serialization`
-// (declared `apply false` in the root build.gradle.kts) at version 2.0.21, and
-// since :app depends on both of them, that resolution has already happened by
-// the time this file is evaluated. Re-declaring an explicit (even matching)
-// version for a *different* plugin ID from the same artifact here trips
-// Gradle's "plugin already on the classpath with an unknown version" check —
-// so these are intentionally left unversioned, resolving against whatever's
-// already on the shared plugin classpath. Only com.android.application (a
-// separate artifact, not applied anywhere else) keeps an explicit version.
+// All versions are declared once, in the root build.gradle.kts (apply
+// false), via the version catalog. See the comment there for why.
 plugins {
-    id("com.android.application") version "8.5.2"
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.serialization")
-    id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.kapt)
 }
 
 // CI (release.yml) passes -PversionName=<x.y.z> -PversionCode=<n>; local/dev builds fall back to defaults.
