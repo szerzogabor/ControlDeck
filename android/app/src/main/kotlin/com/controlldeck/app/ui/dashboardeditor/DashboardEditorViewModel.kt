@@ -48,8 +48,8 @@ data class DashboardEditorUiState(
  */
 class DashboardEditorViewModel(
     private val store: DashboardStore,
-    private val onLocalEditBroadcast: suspend (Dashboard) -> Unit = {},
     coroutineScope: CoroutineScope? = null,
+    private val onLocalEditBroadcast: suspend (Dashboard) -> Unit = {},
 ) : ViewModel() {
 
     private val scope: CoroutineScope = coroutineScope ?: viewModelScope
