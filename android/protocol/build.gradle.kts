@@ -4,7 +4,8 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
+    // See :domain's build.gradle.kts comment — must match :app's JVM target.
+    jvmToolchain(17)
 }
 
 dependencies {
