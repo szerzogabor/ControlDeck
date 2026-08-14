@@ -1,6 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using ControlDeck.Domain;
+// System.Windows.Controls also defines a MediaState enum (for MediaElement);
+// disambiguate in favor of the domain type used throughout this file.
+using MediaState = ControlDeck.Domain.MediaState;
 
 namespace ControlDeck.Agent.Views;
 

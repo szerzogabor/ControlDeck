@@ -124,10 +124,12 @@ dependencies {
     implementation(libs.zxing.embedded)
     implementation(libs.coil.compose)
 
+    testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.jupiter.api)
     testImplementation(libs.junit5.jupiter.params)
     testImplementation(libs.kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit5.jupiter.engine)
+    testRuntimeOnly(libs.junit5.platform.launcher)
 }
 
 tasks.withType<Test> {
