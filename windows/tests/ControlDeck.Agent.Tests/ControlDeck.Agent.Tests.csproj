@@ -12,7 +12,7 @@
       this Linux authoring container. See the top-level report for what was
       and wasn't verified locally.
     -->
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>

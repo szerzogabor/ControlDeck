@@ -9,7 +9,7 @@
       and Protocol are deliberately plain net8.0 so they build/test
       cross-platform; only this project needs Windows.
     -->
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>ControlDeck.Agent</RootNamespace>
     <AssemblyName>ControlDeck.Agent</AssemblyName>
