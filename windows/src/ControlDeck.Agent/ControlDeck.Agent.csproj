@@ -10,6 +10,7 @@
       cross-platform; only this project needs Windows.
     -->
     <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <RootNamespace>ControlDeck.Agent</RootNamespace>
     <AssemblyName>ControlDeck.Agent</AssemblyName>
