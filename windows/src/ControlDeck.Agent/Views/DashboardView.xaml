@@ -1,0 +1,37 @@
+<UserControl x:Class="ControlDeck.Agent.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Column="0" Margin="0,0,12,0">
+            <TextBlock Text="Dashboards" FontSize="16" FontWeight="Bold" DockPanel.Dock="Top" Margin="0,0,0,8" />
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                <Button x:Name="NewDashboardButton" Content="New" Click="NewDashboardButton_Click" Margin="0,0,6,0" />
+                <Button x:Name="RenameDashboardButton" Content="Rename" Click="RenameDashboardButton_Click" Margin="0,0,6,0" />
+                <Button x:Name="DeleteDashboardButton" Content="Delete" Click="DeleteDashboardButton_Click" />
+            </StackPanel>
+            <ListBox x:Name="DashboardList" SelectionChanged="DashboardList_SelectionChanged" DisplayMemberPath="Name" />
+        </DockPanel>
+
+        <DockPanel Grid.Column="1">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock x:Name="DashboardTitle" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" />
+                <Button x:Name="AddSliderWidgetButton" Content="+ Slider" Margin="16,0,0,0" Click="AddSliderWidgetButton_Click" />
+                <Button x:Name="AddButtonWidgetButton" Content="+ Button" Margin="6,0,0,0" Click="AddButtonWidgetButton_Click" />
+            </StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="WidgetsHost">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

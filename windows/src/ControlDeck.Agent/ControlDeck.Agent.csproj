@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      net8.0-windows targets the full Windows desktop surface (WPF, WMI,
+      DPAPI, P/Invoke) this app needs. This means the project can only be
+      *built* on a Windows SDK/runner (see .github CI, windows-latest) — it
+      cannot build on the Linux container this code was authored in. Domain
+      and Protocol are deliberately plain net8.0 so they build/test
+      cross-platform; only this project needs Windows.
+    -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>ControlDeck.Agent</RootNamespace>
+    <AssemblyName>ControlDeck.Agent</AssemblyName>
+    <ApplicationIcon></ApplicationIcon>
+    <Platforms>AnyCPU;x64</Platforms>
+    <!-- WMI/NAudio/DPAPI/keybd_event are all only meaningful on Windows;
+         net8.0-windows already makes this whole project Windows-only, so
+         OperatingSystem.IsWindows() guards are used only where a single
+         file/type might theoretically be exercised from a non-Windows host
+         (e.g. shared logging), not throughout. -->
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Core" Version="2.2.1" />
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ControlDeck.Domain\ControlDeck.Domain.csproj" />
+    <ProjectReference Include="..\ControlDeck.Protocol\ControlDeck.Protocol.csproj" />
+  </ItemGroup>
+
+</Project>

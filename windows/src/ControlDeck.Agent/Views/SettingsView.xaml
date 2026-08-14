@@ -1,0 +1,22 @@
+<UserControl x:Class="ControlDeck.Agent.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Margin="16" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="480" HorizontalAlignment="Left">
+            <TextBlock Text="Device" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock Text="Device name" Margin="0,0,0,2" />
+            <DockPanel Margin="0,0,0,16">
+                <Button Content="Save" DockPanel.Dock="Right" Click="SaveDeviceName_Click" Margin="8,0,0,0" />
+                <TextBox x:Name="DeviceNameBox" />
+            </DockPanel>
+
+            <TextBlock Text="Default reconnect policy for new groups" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <ComboBox x:Name="ReconnectPolicyCombo" Margin="0,0,0,16" SelectionChanged="ReconnectPolicyCombo_SelectionChanged" />
+
+            <TextBlock Text="App Registry" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock Text="Maps appId -&gt; executable path or shell target for APP_LAUNCH widgets." TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8" />
+            <ItemsControl x:Name="AppRegistryHost" Margin="0,0,0,8" />
+            <Button x:Name="AddAppButton" Content="+ Add app" HorizontalAlignment="Left" Click="AddAppButton_Click" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
