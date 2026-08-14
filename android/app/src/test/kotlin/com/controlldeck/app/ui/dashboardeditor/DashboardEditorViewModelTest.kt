@@ -130,6 +130,10 @@ class DashboardEditorViewModelTest {
 
         val gaming = viewModel.uiState.value.dashboards.find { it.name == "Gaming" }!!
         viewModel.switchTo(gaming.id)
+        // switchTo() updates _selectedId synchronously, but uiState is a
+        // combine(...).stateIn(...) collector that only reflects it once the
+        // scheduler runs the collector again.
+        testScheduler.advanceUntilIdle()
 
         assertEquals(gaming.id, viewModel.uiState.value.selectedDashboardId)
         assertEquals("Gaming", viewModel.uiState.value.selectedDashboard?.name)

@@ -99,15 +99,21 @@ class PairingViewModelTest {
     fun `startPinPairing shows the generated PIN and starts a countdown`() = runTest(dispatcher) {
         // The PIN/mode/initial remaining-seconds are set synchronously inside
         // startPinPairing() itself, before the background countdown coroutine
-        // ever runs — so no scheduler advance is needed (and none is safe here:
-        // the countdown is an unbounded `while(true)` loop that would make
-        // advanceUntilIdle() spin forever chasing its own re-scheduled delay).
+        // ever runs — so no scheduler advance is needed here to observe them.
         viewModel.startPinPairing()
 
         val state = viewModel.uiState.value
         assertEquals(PairingMode.SHOWING_PIN, state.mode)
         assertEquals("111111", state.pin)
         assertEquals(120, state.remainingSeconds)
+
+        // The countdown coroutine is still queued (never advanced) and the fake
+        // token never expires in this test, so its `while(true)` loop would
+        // never terminate on its own. runTest's end-of-test cleanup drains the
+        // *shared* TestCoroutineScheduler (not just this TestScope's children),
+        // so it WOULD pick up and spin on that still-pending, never-ending job
+        // if left running — cancel it explicitly so cleanup has nothing to drain.
+        viewModel.cancel()
     }
 
     @Test
