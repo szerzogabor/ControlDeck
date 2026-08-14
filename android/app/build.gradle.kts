@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.compose.compiler)
 }
 
 // CI (release.yml) passes -PversionName=<x.y.z> -PversionCode=<n>; local/dev builds fall back to defaults.
@@ -68,9 +69,10 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
-    }
+    // Compose compiler version/config is now managed by the
+    // org.jetbrains.kotlin.plugin.compose Gradle plugin (applied above),
+    // which replaced the old composeOptions.kotlinCompilerExtensionVersion
+    // mechanism in Kotlin 2.0+.
 
     packaging {
         resources {

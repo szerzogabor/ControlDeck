@@ -13,7 +13,6 @@ androidx-datastore = "1.1.1"
 androidx-security = "1.1.0-alpha06"
 androidx-room = "2.6.1"
 compose-bom = "2024.09.03"
-compose-compiler = "1.5.15"
 zxing-core = "3.5.3"
 zxing-embedded = "4.3.0"
 coil = "2.7.0"
@@ -67,4 +66,5 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
