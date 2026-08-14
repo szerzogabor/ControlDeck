@@ -1,3 +1,5 @@
+import java.time.Duration
+
 // All versions are declared once, in the root build.gradle.kts (apply
 // false), via the version catalog. See the comment there for why.
 plugins {
@@ -141,5 +143,5 @@ tasks.withType<Test> {
     // Safety net: a genuinely hung coroutine test (e.g. a leaked viewModelScope
     // job not sharing the TestDispatcher's scheduler) should fail CI fast rather
     // than burn the runner's time budget indefinitely.
-    timeout.set(java.time.Duration.ofMinutes(5))
+    timeout.set(Duration.ofMinutes(5))
 }

@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
@@ -20,5 +22,5 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    timeout.set(java.time.Duration.ofMinutes(5))
+    timeout.set(Duration.ofMinutes(5))
 }
