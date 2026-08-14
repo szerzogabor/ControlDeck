@@ -1,0 +1,52 @@
+name: CI - Windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "windows/**"
+      - "protocol/PROTOCOL.md"
+      - ".github/workflows/ci-windows.yml"
+  pull_request:
+    paths:
+      - "windows/**"
+      - "protocol/PROTOCOL.md"
+      - ".github/workflows/ci-windows.yml"
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Build and test
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore ControlDeck.sln
+
+      - name: Build
+        run: dotnet build ControlDeck.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test ControlDeck.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-results
+          path: windows/**/TestResults/**
+          if-no-files-found: ignore
+          retention-days: 7

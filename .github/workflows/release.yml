@@ -1,0 +1,178 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci-android:
+    name: Android CI
+    uses: ./.github/workflows/ci-android.yml
+
+  ci-windows:
+    name: Windows CI
+    uses: ./.github/workflows/ci-windows.yml
+
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      tag: ${{ steps.compute.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: compute
+        run: |
+          BASE_VERSION=$(tr -d '[:space:]' < VERSION)
+          MAJOR_MINOR=$(echo "$BASE_VERSION" | cut -d. -f1,2)
+          VERSION="${MAJOR_MINOR}.${{ github.run_number }}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+  package-android:
+    name: Package Android release artifacts
+    needs: [ci-android, version]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    env:
+      VERSION_NAME: ${{ needs.version.outputs.version }}
+      VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode signing keystore
+        id: signing
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "has_signing=true" >> "$GITHUB_OUTPUT"
+          echo "store_file=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed release APK + AAB
+        if: steps.signing.outputs.has_signing == 'true'
+        run: |
+          gradle :app:assembleRelease :app:bundleRelease --console=plain --no-daemon \
+            -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE" \
+            -Pandroid.injected.signing.store.file="${{ steps.signing.outputs.store_file }}" \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      - name: Build unsigned/debug APK (no signing secrets configured)
+        if: steps.signing.outputs.has_signing != 'true'
+        run: |
+          gradle :app:assembleDebug --console=plain --no-daemon \
+            -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"
+
+      - name: Collect artifacts (signed)
+        if: steps.signing.outputs.has_signing == 'true'
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          find app/build/outputs/apk/release -name "*.apk" -exec cp {} "$GITHUB_WORKSPACE/dist/ControlDeck-Android-v${VERSION_NAME}.apk" \;
+          find app/build/outputs/bundle/release -name "*.aab" -exec cp {} "$GITHUB_WORKSPACE/dist/ControlDeck-Android-v${VERSION_NAME}.aab" \;
+
+      - name: Collect artifacts (debug/unsigned)
+        if: steps.signing.outputs.has_signing != 'true'
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          find app/build/outputs/apk/debug -name "*.apk" -exec cp {} "$GITHUB_WORKSPACE/dist/ControlDeck-Android-v${VERSION_NAME}-unsigned-debug.apk" \;
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: dist/*
+          retention-days: 14
+
+  package-windows:
+    name: Package Windows release artifact
+    needs: [ci-windows, version]
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows
+    env:
+      VERSION_NAME: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish self-contained win-x64
+        run: >
+          dotnet publish src/ControlDeck.Agent/ControlDeck.Agent.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=false
+          -p:Version=$env:VERSION_NAME
+          --output publish/ControlDeck-Windows
+
+      - name: Zip published output
+        run: >
+          Compress-Archive -Path publish/ControlDeck-Windows/*
+          -DestinationPath "ControlDeck-Windows-v$($env:VERSION_NAME).zip"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-artifact
+          path: windows/ControlDeck-Windows-v*.zip
+          retention-days: 14
+
+  release:
+    name: Create GitHub Release
+    needs: [version, package-android, package-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: dist
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release-artifact
+          path: dist
+
+      - name: Create/update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: ControlDeck ${{ needs.version.outputs.version }}
+          body: |
+            Automated release for commit ${{ github.sha }}.
+
+            No release is published unless the Android and Windows CI jobs
+            (build + unit tests + lint) succeed for this commit.
+          draft: false
+          prerelease: true
+          files: dist/**
