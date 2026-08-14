@@ -20,4 +20,5 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    timeout.set(java.time.Duration.ofMinutes(5))
 }

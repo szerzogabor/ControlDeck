@@ -8,6 +8,7 @@ import com.controlldeck.domain.GridPosition
 import com.controlldeck.domain.GridSize
 import com.controlldeck.domain.Widget
 import com.controlldeck.domain.WidgetId
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,11 +35,24 @@ data class DashboardEditorUiState(
  * Depends only on [DashboardStore] (not the concrete Room-backed
  * repository), so it is unit-testable against an in-memory fake without
  * an Android SDK/Robolectric.
+ *
+ * [coroutineScope] defaults to [viewModelScope] in production. Tests pass
+ * their own [kotlinx.coroutines.test.TestScope] instead: [viewModelScope]'s
+ * `SupervisorJob` is independent of a test's `TestScope` job, so a
+ * `stateIn(viewModelScope, SharingStarted.Eagerly, ...)` collector (or any
+ * other long-lived `scope.launch`) is never a child the test
+ * framework knows to await/cancel — under `Dispatchers.setMain` in a plain
+ * JVM unit test (no Robolectric-provided Main dispatcher) that has caused
+ * real test-run hangs. Injecting the scope avoids the hazard entirely
+ * instead of relying on `Dispatchers.Main` plumbing being test-friendly.
  */
 class DashboardEditorViewModel(
     private val store: DashboardStore,
     private val onLocalEditBroadcast: suspend (Dashboard) -> Unit = {},
+    coroutineScope: CoroutineScope? = null,
 ) : ViewModel() {
+
+    private val scope: CoroutineScope = coroutineScope ?: viewModelScope
 
     private val _selectedId = MutableStateFlow<DashboardId?>(null)
     private val _error = MutableStateFlow<String?>(null)
@@ -48,7 +62,7 @@ class DashboardEditorViewModel(
     // tests) that read `.value` without an active Compose collector.
     val uiState: StateFlow<DashboardEditorUiState> = combine(store.observeDashboards(), _selectedId, _error) { dashboards, selectedId, error ->
         DashboardEditorUiState(dashboards, selectedId, error)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, DashboardEditorUiState())
+    }.stateIn(scope, SharingStarted.Eagerly, DashboardEditorUiState())
 
     // ---- List CRUD / switch ----
 
@@ -57,7 +71,7 @@ class DashboardEditorViewModel(
             _error.value = "Dashboard name cannot be empty"
             return
         }
-        viewModelScope.launch {
+        scope.launch {
             val dashboard = store.createDashboard(name.trim())
             store.persistNew(dashboard)
             _selectedId.value = dashboard.id
@@ -70,7 +84,7 @@ class DashboardEditorViewModel(
             _error.value = "Dashboard name cannot be empty"
             return
         }
-        viewModelScope.launch {
+        scope.launch {
             val current = store.getDashboard(id) ?: return@launch
             val edited = store.persistLocalEdit(current.copy(name = newName.trim()))
             onLocalEditBroadcast(edited)
@@ -78,7 +92,7 @@ class DashboardEditorViewModel(
     }
 
     fun deleteDashboard(id: DashboardId) {
-        viewModelScope.launch {
+        scope.launch {
             store.deleteDashboard(id)
             if (_selectedId.value == id) _selectedId.value = null
         }
@@ -114,7 +128,7 @@ class DashboardEditorViewModel(
 
     private fun editSelected(transform: (Dashboard) -> Dashboard) {
         val current = uiState.value.selectedDashboard ?: return
-        viewModelScope.launch {
+        scope.launch {
             val edited = store.persistLocalEdit(transform(current))
             onLocalEditBroadcast(edited)
         }

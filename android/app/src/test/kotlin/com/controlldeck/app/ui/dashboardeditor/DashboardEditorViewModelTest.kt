@@ -2,15 +2,12 @@ package com.controlldeck.app.ui.dashboardeditor
 
 import com.controlldeck.domain.Dashboard
 import com.controlldeck.domain.DashboardId
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -55,24 +52,24 @@ private class FakeDashboardStore : DashboardStore {
 class DashboardEditorViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
+
+    // Passed directly as the ViewModel's coroutineScope instead of relying on
+    // Dispatchers.setMain + viewModelScope: viewModelScope's job is independent
+    // of runTest's TestScope job, so a Dispatchers.Main-routed
+    // stateIn(..., SharingStarted.Eagerly, ...) collector is never guaranteed to
+    // share the same TestCoroutineScheduler as testScheduler.advanceUntilIdle()
+    // below — that mismatch previously hung this test run in CI. Using the same
+    // TestScope(dispatcher) instance for both eliminates the ambiguity.
+    private val testScope = TestScope(dispatcher)
     private lateinit var store: FakeDashboardStore
     private lateinit var viewModel: DashboardEditorViewModel
     private val broadcasted = mutableListOf<Dashboard>()
 
     @BeforeEach
     fun setUp() {
-        // Install the SAME dispatcher instance used by runTest(dispatcher) below, so
-        // viewModelScope (Dispatchers.Main.immediate) and the test's advanceUntilIdle()
-        // share one scheduler — otherwise the eager stateIn collector never advances.
-        Dispatchers.setMain(dispatcher)
         store = FakeDashboardStore()
         broadcasted.clear()
-        viewModel = DashboardEditorViewModel(store) { dashboard -> broadcasted.add(dashboard) }
-    }
-
-    @AfterEach
-    fun tearDown() {
-        Dispatchers.resetMain()
+        viewModel = DashboardEditorViewModel(store, onLocalEditBroadcast = { dashboard -> broadcasted.add(dashboard) }, coroutineScope = testScope)
     }
 
     @Test

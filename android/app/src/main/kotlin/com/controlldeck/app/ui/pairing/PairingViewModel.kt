@@ -3,6 +3,7 @@ package com.controlldeck.app.ui.pairing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.controlldeck.app.pairing.QrPairingPayload
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -59,6 +60,12 @@ interface PairingTokenSource {
  * [ViewModel]/[viewModelScope] from androidx.lifecycle, which do not pull
  * in android.* APIs) — safe to unit test against [PairingTokenSource] and
  * [PairingConnector] fakes without Robolectric.
+ *
+ * [coroutineScope] defaults to [viewModelScope] in production; tests inject
+ * their own `TestScope` instead, since [viewModelScope]'s job is
+ * independent of a test's `TestScope` job — see the equivalent note on
+ * [com.controlldeck.app.ui.dashboardeditor.DashboardEditorViewModel] for
+ * why that matters for the countdown coroutine below.
  */
 class PairingViewModel(
     private val tokenSource: PairingTokenSource,
@@ -66,7 +73,10 @@ class PairingViewModel(
     private val selfDeviceId: String,
     private val boundPort: Int,
     private val tickIntervalMs: Long = 1000L,
+    coroutineScope: CoroutineScope? = null,
 ) : ViewModel() {
+
+    private val scope: CoroutineScope = coroutineScope ?: viewModelScope
 
     private val _uiState = MutableStateFlow(PairingUiState())
     val uiState: StateFlow<PairingUiState> = _uiState
@@ -123,7 +133,7 @@ class PairingViewModel(
 
     private fun startCountdown() {
         countdownJob?.cancel()
-        countdownJob = viewModelScope.launch {
+        countdownJob = scope.launch {
             while (true) {
                 val remaining = tokenSource.remainingValiditySeconds()
                 if (remaining <= 0) {

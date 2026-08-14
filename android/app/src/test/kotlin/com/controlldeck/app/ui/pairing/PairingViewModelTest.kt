@@ -1,13 +1,10 @@
 package com.controlldeck.app.ui.pairing
 
 import com.controlldeck.app.pairing.QrPairingPayload
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -60,21 +57,27 @@ private class FakePairingConnector : PairingConnector {
 class PairingViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
+
+    // See DashboardEditorViewModelTest's equivalent field for why this is
+    // injected directly rather than relying on Dispatchers.setMain +
+    // viewModelScope (which previously hung this test run in CI).
+    private val testScope = TestScope(dispatcher)
     private lateinit var tokenSource: FakePairingTokenSource
     private lateinit var connector: FakePairingConnector
     private lateinit var viewModel: PairingViewModel
 
     @BeforeEach
     fun setUp() {
-        Dispatchers.setMain(dispatcher)
         tokenSource = FakePairingTokenSource()
         connector = FakePairingConnector()
-        viewModel = PairingViewModel(tokenSource, connector, selfDeviceId = "self-id", boundPort = 47531, tickIntervalMs = 1000)
-    }
-
-    @AfterEach
-    fun tearDown() {
-        Dispatchers.resetMain()
+        viewModel = PairingViewModel(
+            tokenSource,
+            connector,
+            selfDeviceId = "self-id",
+            boundPort = 47531,
+            tickIntervalMs = 1000,
+            coroutineScope = testScope,
+        )
     }
 
     @Test

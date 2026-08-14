@@ -138,4 +138,8 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // Safety net: a genuinely hung coroutine test (e.g. a leaked viewModelScope
+    // job not sharing the TestDispatcher's scheduler) should fail CI fast rather
+    // than burn the runner's time budget indefinitely.
+    timeout.set(java.time.Duration.ofMinutes(5))
 }
