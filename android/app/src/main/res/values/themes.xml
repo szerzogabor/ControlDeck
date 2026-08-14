@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Minimal platform theme used only for the window background before
+        Compose takes over. All real theming (dark Material3 color scheme,
+        per docs/ARCHITECTURE.md UI notes) lives in ui/theme/Theme.kt.
+    -->
+    <style name="Theme.ControlDeck" parent="android:Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/control_deck_background</item>
+        <item name="android:statusBarColor">@color/control_deck_background</item>
+        <item name="android:navigationBarColor">@color/control_deck_background</item>
+    </style>
+</resources>
