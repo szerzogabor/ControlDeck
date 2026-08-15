@@ -7,11 +7,6 @@ on:
       - "android/**"
       - "protocol/PROTOCOL.md"
       - ".github/workflows/ci-android.yml"
-  pull_request:
-    paths:
-      - "android/**"
-      - "protocol/PROTOCOL.md"
-      - ".github/workflows/ci-android.yml"
   workflow_call:
 
 permissions:

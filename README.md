@@ -216,9 +216,10 @@ Run everything locally with the commands in [Building locally](#building-locally
 
 ## CI/CD and releases
 
-- **`ci-android.yml`** / **`ci-windows.yml`**: run on every push and pull
-  request touching the respective platform — compile, unit test, and
-  (Android) lint. No release artifacts are produced here.
+- **`ci-android.yml`** / **`ci-windows.yml`**: run on every push to `main`
+  touching the respective platform (and are also invoked as reusable
+  workflows by `release.yml`) — compile, unit test, and (Android) lint.
+  They do not run on pull requests. No release artifacts are produced here.
 - **`release.yml`**: runs on every push to `main`. It re-runs both CI
   workflows and, only if both succeed, packages and publishes a GitHub
   Release:
