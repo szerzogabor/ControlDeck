@@ -7,11 +7,6 @@ on:
       - "windows/**"
       - "protocol/PROTOCOL.md"
       - ".github/workflows/ci-windows.yml"
-  pull_request:
-    paths:
-      - "windows/**"
-      - "protocol/PROTOCOL.md"
-      - ".github/workflows/ci-windows.yml"
   workflow_call:
 
 permissions:
