@@ -22,7 +22,7 @@ public sealed class WebSocketServerHost : IAsyncDisposable
     private readonly ISecretStore _secretStore;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<WebSocketServerHost> _logger;
-    private readonly HttpListener _listener = new();
+    private HttpListener _listener = new();
     private readonly CancellationTokenSource _cts = new();
     private Task? _acceptLoop;
 
@@ -57,7 +57,9 @@ public sealed class WebSocketServerHost : IAsyncDisposable
         catch (HttpListenerException ex)
         {
             _logger.LogWarning(ex, "Failed to bind ws server to all interfaces on port {Port}; falling back to localhost only.", _port);
-            _listener.Prefixes.Clear();
+            // A failed Start() leaves the listener disposed internally, so the
+            // fallback attempt needs a fresh instance rather than reusing _listener.
+            _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{_port}/");
             _listener.Start();
         }
