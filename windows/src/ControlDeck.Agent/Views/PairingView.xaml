@@ -5,6 +5,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Column="0" Margin="0,0,16,0">
@@ -16,7 +17,7 @@
             <TextBlock x:Name="ExpiryText" Foreground="Gray" Margin="0,4,0,0" />
         </StackPanel>
 
-        <StackPanel Grid.Column="1">
+        <StackPanel Grid.Column="1" Margin="0,0,16,0">
             <TextBlock Text="Pair by entering a PIN" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
             <TextBlock Text="Enter the host/IP, port, and PIN shown on the other device." TextWrapping="Wrap" Margin="0,0,0,12" />
             <TextBlock Text="Host / IP address" Margin="0,0,0,2" />
@@ -27,6 +28,15 @@
             <TextBox x:Name="PinBox" Margin="0,0,0,12" />
             <Button x:Name="PairButton" Content="Pair" Click="PairButton_Click" HorizontalAlignment="Left" />
             <TextBlock x:Name="PairResultText" Margin="0,12,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="2">
+            <TextBlock Text="Nearby devices" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8">
+                Click a device to connect instantly. Only works if that device has "Auto-accept pairing" turned on in its own Settings —
+                otherwise use QR/PIN pairing on the left.
+            </TextBlock>
+            <ListBox x:Name="NearbyDeviceList" SelectionChanged="NearbyDeviceList_SelectionChanged" />
         </StackPanel>
     </Grid>
 </UserControl>

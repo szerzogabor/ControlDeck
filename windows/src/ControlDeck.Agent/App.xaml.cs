@@ -92,7 +92,7 @@ public sealed class AppServices : IDisposable
 
         var server = new WebSocketServerHost(prefs.WebSocketPort, identity, secretStore, loggerFactory);
         var clientConnector = new WebSocketClientConnector(identity, secretStore, loggerFactory);
-        var pairingService = new PairingService(identity, secretStore, pairedDeviceRepository, clientConnector, loggerFactory.CreateLogger<PairingService>());
+        var pairingService = new PairingService(identity, secretStore, pairedDeviceRepository, clientConnector, preferences, loggerFactory.CreateLogger<PairingService>());
 
         server.ConnectionAccepted += (_, connection) =>
         {

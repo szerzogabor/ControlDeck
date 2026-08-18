@@ -10,7 +10,13 @@ namespace ControlDeck.Agent.Persistence;
 public sealed record Preferences(
     int WebSocketPort = 47531,
     ReconnectPolicy DefaultReconnectPolicy = ReconnectPolicy.SyncGroupState,
-    bool StartMinimizedToTray = false
+    bool StartMinimizedToTray = false,
+    // Testing-only convenience: when true, this device accepts any incoming
+    // PAIR_REQUEST without checking the PIN/QR token (see
+    // PairingService.HandleIncomingPairRequestAsync). Off by default —
+    // enabling it means anything on the LAN speaking the protocol can pair
+    // with this device with no human confirmation.
+    bool AutoAcceptPairing = false
 );
 
 public interface IPreferencesRepository

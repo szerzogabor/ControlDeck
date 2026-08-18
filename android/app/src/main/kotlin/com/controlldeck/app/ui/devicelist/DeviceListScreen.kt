@@ -36,7 +36,7 @@ import com.controlldeck.domain.DeviceId
 @Composable
 fun DeviceListScreen(
     viewModel: DeviceListViewModel,
-    onPairWithDiscovered: (DiscoveredDevice) -> Unit,
+    onQuickConnect: (DiscoveredDevice) -> Unit,
     onScanQr: () -> Unit,
     onEnterPin: () -> Unit,
     onForget: (DeviceId) -> Unit = {},
@@ -66,12 +66,16 @@ fun DeviceListScreen(
             }
 
             Text("Nearby (unpaired)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp))
+            Text(
+                "Tap a device to connect instantly. This only works if the other device has \"Auto-accept pairing\" turned on in its Settings — otherwise use Scan QR / Enter PIN above.",
+                style = MaterialTheme.typography.bodySmall,
+            )
             if (state.discoveredUnpaired.isEmpty()) {
                 Text("Searching for devices on your network...", style = MaterialTheme.typography.bodyMedium)
             }
             LazyColumn {
                 items(state.discoveredUnpaired, key = { it.deviceId.value }) { device ->
-                    DiscoveredDeviceRow(device, onClick = { onPairWithDiscovered(device) })
+                    DiscoveredDeviceRow(device, onClick = { onQuickConnect(device) })
                 }
             }
         }

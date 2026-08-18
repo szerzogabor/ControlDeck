@@ -27,6 +27,7 @@ class DeviceListViewModel(
     private val pairedDeviceRepository: PairedDeviceRepository,
     private val nsdDiscoveryService: NsdDiscoveryService,
     private val deviceStateManager: DeviceStateManager,
+    private val selfDeviceId: DeviceId,
 ) : ViewModel() {
 
     val uiState: StateFlow<DeviceListUiState> = combine(
@@ -37,7 +38,10 @@ class DeviceListViewModel(
         val pairedIds = paired.map { it.deviceId }.toSet()
         DeviceListUiState(
             pairedDevices = paired.map { PairedDeviceUi(it, states[it.deviceId]?.connection == ConnectionState.ONLINE) },
-            discoveredUnpaired = discovered.filter { it.deviceId !in pairedIds },
+            // Android's NsdManager commonly reports a device's own advertised
+            // service back through discovery callbacks, so this device's own
+            // deviceId must be excluded explicitly, not just paired ones.
+            discoveredUnpaired = discovered.filter { it.deviceId !in pairedIds && it.deviceId != selfDeviceId },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DeviceListUiState())
 

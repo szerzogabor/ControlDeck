@@ -21,7 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -109,10 +111,37 @@ private fun QrContent(viewModel: PairingViewModel, state: PairingUiState) {
     Text("Expires in ${state.remainingSeconds}s", style = MaterialTheme.typography.bodyMedium)
 }
 
+/** Default ControlDeck WebSocket port, per protocol/PROTOCOL.md §1. */
+private const val DEFAULT_PORT = "47531"
+
 @Composable
 private fun EnterPinContent(viewModel: PairingViewModel, state: PairingUiState, host: String?, port: Int) {
+    // host/port are only pre-filled when pairing was started by tapping a
+    // specific discovered device row. Entered generically (e.g. the device
+    // list's standalone "Enter PIN" button), neither is known yet, so the
+    // user must supply the peer's address themselves.
+    var manualHost by remember { mutableStateOf("") }
+    var manualPort by remember { mutableStateOf(if (port > 0) port.toString() else DEFAULT_PORT) }
+
     Text("Enter the peer's 6-digit PIN", style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
+    if (host == null) {
+        OutlinedTextField(
+            value = manualHost,
+            onValueChange = { manualHost = it },
+            label = { Text("Peer IP address") },
+            isError = state.error != null,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = manualPort,
+            onValueChange = { manualPort = it.filter(Char::isDigit).take(5) },
+            label = { Text("Port") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+    }
     OutlinedTextField(
         value = state.enteredPin,
         onValueChange = { viewModel.updateEnteredPin(it) },
@@ -124,9 +153,13 @@ private fun EnterPinContent(viewModel: PairingViewModel, state: PairingUiState, 
         Text(state.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
     Spacer(modifier = Modifier.height(16.dp))
+
+    val resolvedHost = host ?: manualHost.trim().ifBlank { null }
+    val resolvedPort = if (host != null) port else manualPort.toIntOrNull()
+
     Button(
-        onClick = { host?.let { viewModel.submitEnteredPin(it, port) } },
-        enabled = viewModel.isEnteredPinValidFormat() && host != null && !state.connecting,
+        onClick = { if (resolvedHost != null && resolvedPort != null) viewModel.submitEnteredPin(resolvedHost, resolvedPort) },
+        enabled = viewModel.isEnteredPinValidFormat() && resolvedHost != null && resolvedPort != null && !state.connecting,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(if (state.connecting) "Connecting..." else "Connect")

@@ -26,6 +26,7 @@ import com.controlldeck.app.sync.PeerConnectionCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -72,7 +73,12 @@ class ServiceLocator(context: Context) {
             localApps = runBlocking { appRegistryRepository.toWireAppList() },
             isPaired = { deviceId -> pairedDeviceRepository.isPaired(deviceId) },
             getSharedSecret = { deviceId -> pairedDeviceRepository.getSharedSecret(deviceId) },
-            validatePairingToken = { token -> pairingManager.validateToken(token) },
+            // Testing-only convenience: bypass PIN/QR validation entirely when
+            // this device has "Auto-accept pairing" enabled in Settings.
+            validatePairingToken = { token ->
+                if (userPreferencesRepository.preferences.first().autoAcceptPairing) true
+                else pairingManager.validateToken(token)
+            },
             onPaired = { deviceId, name, platformRaw, secret ->
                 pairedDeviceRepository.savePairing(
                     com.controlldeck.app.persistence.PairedDevice(

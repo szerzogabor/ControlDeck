@@ -13,6 +13,13 @@
             <TextBlock Text="Default reconnect policy for new groups" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
             <ComboBox x:Name="ReconnectPolicyCombo" Margin="0,0,0,16" SelectionChanged="ReconnectPolicyCombo_SelectionChanged" />
 
+            <TextBlock Text="Auto-accept pairing" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8">
+                Testing only. When on, this device accepts any pairing request over the LAN with one click — no PIN or QR code needed.
+                Anything on your network speaking the protocol can pair with it while this is enabled.
+            </TextBlock>
+            <CheckBox x:Name="AutoAcceptPairingCheckBox" Content="Auto-accept pairing" Margin="0,0,0,16" Checked="AutoAcceptPairingCheckBox_Changed" Unchecked="AutoAcceptPairingCheckBox_Changed" />
+
             <TextBlock Text="App Registry" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
             <TextBlock Text="Maps appId -&gt; executable path or shell target for APP_LAUNCH widgets." TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8" />
             <ItemsControl x:Name="AppRegistryHost" Margin="0,0,0,8" />

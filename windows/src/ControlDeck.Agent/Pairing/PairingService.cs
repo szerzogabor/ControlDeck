@@ -28,6 +28,7 @@ public sealed class PairingService
     private readonly ISecretStore _secretStore;
     private readonly IPairedDeviceRepository _pairedDevices;
     private readonly WebSocketClientConnector _clientConnector;
+    private readonly IPreferencesRepository _preferences;
     private readonly ILogger<PairingService> _logger;
 
     private PairingToken? _activeIncomingToken;
@@ -39,12 +40,14 @@ public sealed class PairingService
         ISecretStore secretStore,
         IPairedDeviceRepository pairedDevices,
         WebSocketClientConnector clientConnector,
+        IPreferencesRepository preferences,
         ILogger<PairingService> logger)
     {
         _selfIdentity = selfIdentity;
         _secretStore = secretStore;
         _pairedDevices = pairedDevices;
         _clientConnector = clientConnector;
+        _preferences = preferences;
         _logger = logger;
     }
 
@@ -61,18 +64,25 @@ public sealed class PairingService
     /// <summary>Wire this up to every accepted <see cref="PeerConnection.PairRequestReceived"/>.</summary>
     public async Task HandleIncomingPairRequestAsync(PeerConnection connection, PairRequestPayload request)
     {
-        if (_activeIncomingToken is null || _activeIncomingToken.IsExpired)
-        {
-            _logger.LogInformation("Rejected PAIR_REQUEST from {RequesterDeviceId}: no active/expired pairing window.", request.RequesterDeviceId);
-            await connection.SendPairResponseAsync(false, "TOKEN_EXPIRED", null).ConfigureAwait(false);
-            return;
-        }
+        // Testing-only convenience: bypass PIN/QR validation entirely when
+        // this device has "Auto-accept pairing" enabled in Settings.
+        var autoAccept = _preferences.Load().AutoAcceptPairing;
 
-        if (request.PairingToken != _activeIncomingToken.Value)
+        if (!autoAccept)
         {
-            _logger.LogInformation("Rejected PAIR_REQUEST from {RequesterDeviceId}: token mismatch.", request.RequesterDeviceId);
-            await connection.SendPairResponseAsync(false, "TOKEN_INVALID", null).ConfigureAwait(false);
-            return;
+            if (_activeIncomingToken is null || _activeIncomingToken.IsExpired)
+            {
+                _logger.LogInformation("Rejected PAIR_REQUEST from {RequesterDeviceId}: no active/expired pairing window.", request.RequesterDeviceId);
+                await connection.SendPairResponseAsync(false, "TOKEN_EXPIRED", null).ConfigureAwait(false);
+                return;
+            }
+
+            if (request.PairingToken != _activeIncomingToken.Value)
+            {
+                _logger.LogInformation("Rejected PAIR_REQUEST from {RequesterDeviceId}: token mismatch.", request.RequesterDeviceId);
+                await connection.SendPairResponseAsync(false, "TOKEN_INVALID", null).ConfigureAwait(false);
+                return;
+            }
         }
 
         var secret = RandomNumberGenerator.GetBytes(32);
@@ -83,6 +93,15 @@ public sealed class PairingService
         // One-shot: the token can't be reused for a second requester in the same window.
         _activeIncomingToken = null;
     }
+
+    /// <summary>
+    /// One-click testing convenience: connects to a discovered peer with no
+    /// PIN/QR entry. Only succeeds if that peer has "Auto-accept pairing"
+    /// enabled in its own Settings — otherwise it's rejected exactly like any
+    /// other invalid pairing token.
+    /// </summary>
+    public Task<bool> QuickConnectAsync(string host, int port, CancellationToken cancellationToken) =>
+        PairByPinAsync(host, port, pin: string.Empty, cancellationToken);
 
     /// <summary>Outbound: connect to a peer displaying a PIN and send PAIR_REQUEST. Returns true on PAIR_RESPONSE{accepted:true}.</summary>
     public async Task<bool> PairByPinAsync(string host, int port, string pin, CancellationToken cancellationToken)

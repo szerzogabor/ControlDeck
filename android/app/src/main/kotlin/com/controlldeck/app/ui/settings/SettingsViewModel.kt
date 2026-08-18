@@ -18,6 +18,7 @@ data class SettingsUiState(
     val deviceName: String = "",
     val defaultReconnectPolicy: ReconnectPolicy = ReconnectPolicy.SYNC_GROUP_STATE,
     val appRegistry: List<LocalAppRegistryEntry> = emptyList(),
+    val autoAcceptPairing: Boolean = false,
 )
 
 class SettingsViewModel(
@@ -31,7 +32,7 @@ class SettingsViewModel(
         userPreferencesRepository.preferences,
         appRegistryRepository.observeEntries(),
     ) { identity, prefs, apps ->
-        SettingsUiState(identity.deviceName, prefs.defaultReconnectPolicy, apps)
+        SettingsUiState(identity.deviceName, prefs.defaultReconnectPolicy, apps, prefs.autoAcceptPairing)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
     fun setDeviceName(name: String) {
@@ -40,6 +41,10 @@ class SettingsViewModel(
 
     fun setDefaultReconnectPolicy(policy: ReconnectPolicy) {
         viewModelScope.launch { userPreferencesRepository.setDefaultReconnectPolicy(policy) }
+    }
+
+    fun setAutoAcceptPairing(enabled: Boolean) {
+        viewModelScope.launch { userPreferencesRepository.setAutoAcceptPairing(enabled) }
     }
 
     fun addOrUpdateApp(appId: String, displayName: String, packageName: String) {

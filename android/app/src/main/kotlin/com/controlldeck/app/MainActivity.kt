@@ -139,12 +139,18 @@ private fun ControlDeckApp(serviceLocator: ServiceLocator) {
                 is Screen.DeviceList -> {
                     val deviceListViewModel: DeviceListViewModel = viewModel(
                         factory = viewModelFactory {
-                            initializer { DeviceListViewModel(serviceLocator.pairedDeviceRepository, serviceLocator.nsdDiscoveryService, serviceLocator.deviceStateManager) }
+                            initializer { DeviceListViewModel(serviceLocator.pairedDeviceRepository, serviceLocator.nsdDiscoveryService, serviceLocator.deviceStateManager, serviceLocator.selfIdentity.deviceId) }
                         },
                     )
                     DeviceListScreen(
                         viewModel = deviceListViewModel,
-                        onPairWithDiscovered = { device -> screen = Screen.Pairing(device.host.hostAddress, device.port) },
+                        // One-click connect: skip the PIN/QR screen entirely and send a
+                        // pairing request straight away. Only succeeds if the target has
+                        // "Auto-accept pairing" enabled in its own Settings (testing
+                        // convenience) — otherwise it's rejected exactly like any other
+                        // invalid pairing token, and the user can fall back to Scan QR /
+                        // Enter PIN below.
+                        onQuickConnect = { device -> device.host.hostAddress?.let { host -> serviceLocator.connectionManager.connectForPairing(host, device.port, "") } },
                         onScanQr = { qrScanLauncher.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setBeepEnabled(false)) },
                         onEnterPin = { screen = Screen.Pairing(null, 0) },
                         onForget = { deviceListViewModel.forgetDevice(it) },

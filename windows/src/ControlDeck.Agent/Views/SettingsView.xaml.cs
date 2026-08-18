@@ -9,6 +9,7 @@ public partial class SettingsView : UserControl
 {
     private readonly AppServices _services;
     private bool _suppressReconnectPolicyEvent;
+    private bool _suppressAutoAcceptPairingEvent;
 
     public SettingsView(AppServices services)
     {
@@ -19,8 +20,13 @@ public partial class SettingsView : UserControl
 
         ReconnectPolicyCombo.ItemsSource = Enum.GetValues<ReconnectPolicy>();
         _suppressReconnectPolicyEvent = true;
-        ReconnectPolicyCombo.SelectedItem = _services.Preferences.Load().DefaultReconnectPolicy;
+        var prefs = _services.Preferences.Load();
+        ReconnectPolicyCombo.SelectedItem = prefs.DefaultReconnectPolicy;
         _suppressReconnectPolicyEvent = false;
+
+        _suppressAutoAcceptPairingEvent = true;
+        AutoAcceptPairingCheckBox.IsChecked = prefs.AutoAcceptPairing;
+        _suppressAutoAcceptPairingEvent = false;
 
         RefreshAppRegistry();
     }
@@ -46,6 +52,17 @@ public partial class SettingsView : UserControl
 
         var prefs = _services.Preferences.Load();
         _services.Preferences.Save(prefs with { DefaultReconnectPolicy = policy });
+    }
+
+    private void AutoAcceptPairingCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppressAutoAcceptPairingEvent)
+        {
+            return;
+        }
+
+        var prefs = _services.Preferences.Load();
+        _services.Preferences.Save(prefs with { AutoAcceptPairing = AutoAcceptPairingCheckBox.IsChecked == true });
     }
 
     private void RefreshAppRegistry()
