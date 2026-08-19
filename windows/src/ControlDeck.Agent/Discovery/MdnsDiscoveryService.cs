@@ -23,9 +23,12 @@ public sealed class MdnsDiscoveryService : IDiscoveryService
     private readonly ILogger<MdnsDiscoveryService> _logger;
     private readonly ConcurrentDictionary<string, DiscoveredDevice> _known = new();
 
+    private static readonly TimeSpan QueryInterval = TimeSpan.FromSeconds(10);
+
     private MulticastService? _mdns;
     private ServiceDiscovery? _serviceDiscovery;
     private string? _selfDeviceId;
+    private Timer? _queryTimer;
 
     public event EventHandler<DiscoveredDevice>? DeviceFound;
     public event EventHandler<string>? DeviceLost;
@@ -41,7 +44,16 @@ public sealed class MdnsDiscoveryService : IDiscoveryService
     {
         _selfDeviceId = deviceId;
 
-        _mdns = new MulticastService();
+        _mdns = new MulticastService
+        {
+            // IPv6 multicast is unreliably supported across consumer Wi-Fi/mobile-hotspot
+            // gear and Android network stacks — Android's own mDNS discovery is
+            // effectively IPv4-only in practice. Dual-stacking here (the library's
+            // default) can leave this device invisible to Android peers even though
+            // Android-to-Android discovery works fine over IPv4. Force IPv4-only so
+            // Windows and Android reliably see each other on the same multicast group.
+            UseIpv6 = false,
+        };
         _serviceDiscovery = new ServiceDiscovery(_mdns);
 
         var profile = new ServiceProfile(deviceId, ServiceName, (ushort)port);
@@ -65,6 +77,16 @@ public sealed class MdnsDiscoveryService : IDiscoveryService
         {
             _logger.LogWarning(ex, "Failed to start mDNS multicast service; discovery will be unavailable.");
         }
+
+        // NetworkInterfaceDiscovered only fires once per interface at startup, so without a
+        // repeat query, a peer that wasn't already advertising at that exact moment (e.g. its
+        // app was opened afterward) would never be found. Re-query periodically like a normal
+        // continuous mDNS browse (Android's NsdManager does this internally).
+        _queryTimer = new Timer(
+            _ => { try { _serviceDiscovery?.QueryServiceInstances(ServiceName); } catch (Exception ex) { _logger.LogWarning(ex, "Periodic mDNS query failed."); } },
+            null,
+            QueryInterval,
+            QueryInterval);
     }
 
     private void OnServiceInstanceDiscovered(object? sender, ServiceInstanceDiscoveryEventArgs e)
@@ -148,6 +170,9 @@ public sealed class MdnsDiscoveryService : IDiscoveryService
 
     public void Stop()
     {
+        _queryTimer?.Dispose();
+        _queryTimer = null;
+
         if (_serviceDiscovery is not null)
         {
             _serviceDiscovery.ServiceInstanceDiscovered -= OnServiceInstanceDiscovered;

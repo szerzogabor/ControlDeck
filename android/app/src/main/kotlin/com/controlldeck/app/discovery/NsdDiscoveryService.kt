@@ -3,6 +3,7 @@ package com.controlldeck.app.discovery
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.net.wifi.WifiManager
 import com.controlldeck.app.logging.Logger
 import com.controlldeck.domain.DeviceId
 import com.controlldeck.domain.Platform
@@ -36,6 +37,16 @@ data class DiscoveredDevice(
 class NsdDiscoveryService(private val context: Context, private val logger: Logger) {
 
     private val nsdManager: NsdManager by lazy { context.getSystemService(Context.NSD_SERVICE) as NsdManager }
+
+    // Without holding this, many Wi-Fi chipsets silently drop *incoming*
+    // multicast packets (including mDNS) to save power — the device can
+    // advertise itself but never receive other peers' announcements. Not
+    // reference-counted: acquire()/release() are called in lockstep from
+    // startDiscovery()/stopDiscovery() below, guarded by isHeld.
+    private val multicastLock: WifiManager.MulticastLock by lazy {
+        val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        wifiManager.createMulticastLock("controldeck-mdns").apply { setReferenceCounted(false) }
+    }
 
     private val _discoveredDevices = MutableStateFlow<Map<String, DiscoveredDevice>>(emptyMap())
 
@@ -98,6 +109,9 @@ class NsdDiscoveryService(private val context: Context, private val logger: Logg
     fun startDiscovery() {
         stopDiscovery()
 
+        runCatching { if (!multicastLock.isHeld) multicastLock.acquire() }
+            .onFailure { logger.w(TAG, "failed to acquire Wi-Fi multicast lock; peer announcements may not be received", it) }
+
         val listener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) {
                 logger.i(TAG, "discovery started")
@@ -136,6 +150,9 @@ class NsdDiscoveryService(private val context: Context, private val logger: Logg
                 .onFailure { logger.w(TAG, "stopServiceDiscovery threw", it) }
         }
         discoveryListener = null
+
+        runCatching { if (multicastLock.isHeld) multicastLock.release() }
+            .onFailure { logger.w(TAG, "failed to release Wi-Fi multicast lock", it) }
     }
 
     private fun resolve(service: NsdServiceInfo) {

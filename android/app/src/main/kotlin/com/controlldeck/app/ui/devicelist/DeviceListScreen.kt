@@ -36,12 +36,12 @@ import com.controlldeck.domain.DeviceId
 @Composable
 fun DeviceListScreen(
     viewModel: DeviceListViewModel,
-    onQuickConnect: (DiscoveredDevice) -> Unit,
     onScanQr: () -> Unit,
     onEnterPin: () -> Unit,
     onForget: (DeviceId) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val quickConnectStatus by viewModel.quickConnectStatus.collectAsState()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Devices") }) },
@@ -73,9 +73,17 @@ fun DeviceListScreen(
             if (state.discoveredUnpaired.isEmpty()) {
                 Text("Searching for devices on your network...", style = MaterialTheme.typography.bodyMedium)
             }
+            if (quickConnectStatus != null) {
+                Text(
+                    quickConnectStatus!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                )
+            }
             LazyColumn {
                 items(state.discoveredUnpaired, key = { it.deviceId.value }) { device ->
-                    DiscoveredDeviceRow(device, onClick = { onQuickConnect(device) })
+                    DiscoveredDeviceRow(device, onClick = { viewModel.quickConnect(device) })
                 }
             }
         }

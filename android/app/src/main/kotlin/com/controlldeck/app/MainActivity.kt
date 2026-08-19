@@ -61,12 +61,21 @@ class MainActivity : ComponentActivity() {
     private val serviceLocator get() = (application as ControlDeckApplication).serviceLocator
 
     private val requestCameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    private val requestNearbyWifiDevicesPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission.launch(android.Manifest.permission.CAMERA)
+        }
+
+        // Required on Android 13+ for NsdManager.resolveService() to actually work — see the
+        // manifest entry's comment. Requesting it on older OS versions is a harmless no-op.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(android.Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestNearbyWifiDevicesPermission.launch(android.Manifest.permission.NEARBY_WIFI_DEVICES)
         }
 
         setContent {
@@ -139,18 +148,19 @@ private fun ControlDeckApp(serviceLocator: ServiceLocator) {
                 is Screen.DeviceList -> {
                     val deviceListViewModel: DeviceListViewModel = viewModel(
                         factory = viewModelFactory {
-                            initializer { DeviceListViewModel(serviceLocator.pairedDeviceRepository, serviceLocator.nsdDiscoveryService, serviceLocator.deviceStateManager, serviceLocator.selfIdentity.deviceId) }
+                            initializer {
+                                DeviceListViewModel(
+                                    serviceLocator.pairedDeviceRepository,
+                                    serviceLocator.nsdDiscoveryService,
+                                    serviceLocator.deviceStateManager,
+                                    serviceLocator.selfIdentity.deviceId,
+                                    serviceLocator.connectionManager,
+                                )
+                            }
                         },
                     )
                     DeviceListScreen(
                         viewModel = deviceListViewModel,
-                        // One-click connect: skip the PIN/QR screen entirely and send a
-                        // pairing request straight away. Only succeeds if the target has
-                        // "Auto-accept pairing" enabled in its own Settings (testing
-                        // convenience) — otherwise it's rejected exactly like any other
-                        // invalid pairing token, and the user can fall back to Scan QR /
-                        // Enter PIN below.
-                        onQuickConnect = { device -> device.host.hostAddress?.let { host -> serviceLocator.connectionManager.connectForPairing(host, device.port, "") } },
                         onScanQr = { qrScanLauncher.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setBeepEnabled(false)) },
                         onEnterPin = { screen = Screen.Pairing(null, 0) },
                         onForget = { deviceListViewModel.forgetDevice(it) },
